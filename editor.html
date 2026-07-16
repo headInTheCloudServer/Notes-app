@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Note Editor</title>
+
+    <link rel="stylesheet" href="./output.css" />
+  </head>
+
+  <body class="min-h-screen bg-base-200 p-6">
+    <main class="mx-auto flex max-w-2xl flex-col gap-4">
+      <input
+        id="note-title"
+        class="input input-bordered text-xl font-bold"
+        type="text"
+        placeholder="Note title"
+      />
+
+      <textarea
+        id="note-body"
+        class="textarea textarea-bordered min-h-80 text-base"
+        placeholder="Start writing..."
+      ></textarea>
+
+      <div class="flex justify-between">
+        <a href="index.html" class="btn btn-ghost">
+          Cancel
+        </a>
+
+        <button id="save-button" class="btn btn-primary">
+          Save
+        </button>
+      </div>
+    </main>
+
+    <script>
+      const titleInput = document.getElementById("note-title");
+      const bodyInput = document.getElementById("note-body");
+      const saveButton = document.getElementById("save-button");
+
+      // Read the note ID from the URL, if one exists.
+      const parameters = new URLSearchParams(window.location.search);
+      const noteId = parameters.get("id");
+
+      // Load all existing notes from localStorage.
+      const notes = JSON.parse(localStorage.getItem("notes")) || [];
+
+      // If an ID exists, this page is editing an existing note.
+      const existingNote = notes.find(function (note) {
+        return note.id === noteId;
+      });
+
+      if (existingNote) {
+        titleInput.value = existingNote.title;
+        bodyInput.value = existingNote.body;
+      }
+
+      saveButton.addEventListener("click", function () {
+        const title = titleInput.value.trim();
+        const body = bodyInput.value.trim();
+
+        if (title === "" && body === "") {
+          alert("Write something before saving.");
+          return;
+        }
+
+        if (existingNote) {
+          // Update the existing note.
+          existingNote.title = title || "Untitled Note";
+          existingNote.body = body;
+          existingNote.updatedAt = Date.now();
+        } else {
+          // Create a new note.
+          const newNote = {
+            id: Date.now().toString(),
+            title: title || "Untitled Note",
+            body: body,
+            updatedAt: Date.now()
+          };
+
+          notes.unshift(newNote);
+        }
+
+        // Save the entire notes array back into localStorage.
+        localStorage.setItem("notes", JSON.stringify(notes));
+
+        // Return to the homepage.
+        window.location.href = "index.html";
+      });
+    </script>
+  </body>
+</html>
