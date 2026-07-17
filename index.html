@@ -11,6 +11,27 @@
 
   <body class="min-h-screen bg-base-200 p-6">
     <main class="mx-auto flex max-w-2xl flex-col gap-6">
+      <div id="auth">
+  <input
+    type="email"
+    id="email"
+    placeholder="Email"
+  >
+
+  <input
+    type="password"
+    id="password"
+    placeholder="Password"
+  >
+
+  <button class="btn btn-primary" id="signUpBtn">
+    Sign Up
+  </button>
+
+  <button class="btn btn-primary" id="signInBtn">
+    Sign In
+  </button>
+</div>
       <div class="flex items-center justify-between">
         <h1 class="text-3xl font-bold">My Notes</h1>
 
@@ -22,7 +43,44 @@
       <div id="notes-list" class="flex flex-col gap-3"></div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+      const supabaseUrl = "https://vvjymhrzfubvpjlgvszl.supabase.co";
+const supabaseAnonKey = "sb_publishable_1Nd4uQMionoaiQGj1i4BfQ_B6i9kWIu";
+
+const supabaseClient = supabase.createClient(
+  supabaseUrl,
+  supabaseAnonKey
+);
+console.log("Supabase client:", supabaseClient);
+async function testSupabaseConnection() {
+  const { data, error } = await supabaseClient
+    .from("notes")
+    .select("*");
+
+  if (error) {
+    console.error("Supabase connection error:", error);
+    return;
+  }
+
+  console.log("Supabase connection worked:", data);
+}
+
+testSupabaseConnection();
+async function signUpUser(email, password) {
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: "dontbedumb81@gmail.com",
+    password: "BeWise"
+  });
+
+  if (error) {
+    console.error("Sign-up error:", error);
+    return;
+  }
+
+  console.log("Sign-up worked:", data);
+}
       const notesList = document.getElementById("notes-list");
 
       const storedNotes = JSON.parse(localStorage.getItem("notes"));
@@ -62,6 +120,42 @@
         element.textContent = text;
         return element.innerHTML;
       }
+      const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const signUpButton = document.getElementById("signUpBtn");
+
+signUpButton.addEventListener("click", async () => {
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: emailInput.value,
+    password: passwordInput.value
+  });
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  console.log("Sign up successful!", data);
+  alert("Sign up successful! Check your email if confirmation is enabled.");
+});
+const signInButton = document.getElementById("signInBtn");
+
+signInButton.addEventListener("click", async () => {
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: emailInput.value,
+    password: passwordInput.value
+  });
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  console.log("Sign in successful!", data);
+  alert("Sign in successful!");
+});
     </script>
   </body>
 </html>

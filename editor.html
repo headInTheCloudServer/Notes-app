@@ -35,7 +35,16 @@
       </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+      const supabaseUrl = "https://vvjymhrzfubvpjlgvszl.supabase.co";
+const supabaseAnonKey = "sb_publishable_1Nd4uQMionoaiQGj1i4BfQ_B6i9kWIu";
+
+const supabaseClient = supabase.createClient(
+  supabaseUrl,
+  supabaseAnonKey
+);
       const titleInput = document.getElementById("note-title");
       const bodyInput = document.getElementById("note-body");
       const saveButton = document.getElementById("save-button");
@@ -44,51 +53,61 @@
       const parameters = new URLSearchParams(window.location.search);
       const noteId = parameters.get("id");
 
-      // Load all existing notes from localStorage.
-      const notes = JSON.parse(localStorage.getItem("notes")) || [];
+      saveButton.addEventListener("click", async function () {
+  const title = titleInput.value.trim();
+  const content = bodyInput.value.trim();
 
-      // If an ID exists, this page is editing an existing note.
-      const existingNote = notes.find(function (note) {
-        return note.id === noteId;
+  if (title === "" && content === "") {
+    alert("Write something before saving.");
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    alert("You must sign in before saving a note.");
+    window.location.href = "index.html";
+    return;
+  }
+
+  let error;
+
+  if (noteId) {
+    const result = await supabaseClient
+      .from("notes")
+      .update({
+        title: title || "Untitled Note",
+        content: content,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", noteId)
+      .eq("user_id", user.id);
+
+    error = result.error;
+  } else {
+    const result = await supabaseClient
+      .from("notes")
+      .insert({
+        user_id: user.id,
+        title: title || "Untitled Note",
+        content: content
       });
 
-      if (existingNote) {
-        titleInput.value = existingNote.title;
-        bodyInput.value = existingNote.body;
-      }
+    error = result.error;
+  }
 
-      saveButton.addEventListener("click", function () {
-        const title = titleInput.value.trim();
-        const body = bodyInput.value.trim();
+  if (error) {
+    console.error("Could not save note:", error);
+    alert(error.message);
+    return;
+  }
 
-        if (title === "" && body === "") {
-          alert("Write something before saving.");
-          return;
-        }
-
-        if (existingNote) {
-          // Update the existing note.
-          existingNote.title = title || "Untitled Note";
-          existingNote.body = body;
-          existingNote.updatedAt = Date.now();
-        } else {
-          // Create a new note.
-          const newNote = {
-            id: Date.now().toString(),
-            title: title || "Untitled Note",
-            body: body,
-            updatedAt: Date.now()
-          };
-
-          notes.unshift(newNote);
-        }
-
-        // Save the entire notes array back into localStorage.
-        localStorage.setItem("notes", JSON.stringify(notes));
-
-        // Return to the homepage.
-        window.location.href = "index.html";
-      });
+  window.location.href = "index.html";
+});
+  
     </script>
   </body>
 </html>
