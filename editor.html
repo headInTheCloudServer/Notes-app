@@ -25,13 +25,21 @@
       ></textarea>
 
       <div class="flex justify-between">
-        <a href="index.html" class="btn btn-ghost">
-          Cancel
-        </a>
+        <div class="flex justify-between">
+  <a href="index.html" class="btn btn-ghost">
+    Cancel
+  </a>
 
-        <button id="save-button" class="btn btn-primary">
-          Save
-        </button>
+  <div class="flex gap-2">
+    <button id="delete-button" class="btn btn-error">
+      Delete
+    </button>
+
+    <button id="save-button" class="btn btn-primary">
+      Save
+    </button>
+  </div>
+</div>
       </div>
     </main>
 
@@ -48,11 +56,13 @@ const supabaseClient = supabase.createClient(
       const titleInput = document.getElementById("note-title");
       const bodyInput = document.getElementById("note-body");
       const saveButton = document.getElementById("save-button");
+      const deleteButton = document.getElementById("delete-button");
 
       // Read the note ID from the URL, if one exists.
       const parameters = new URLSearchParams(window.location.search);
       const noteId = parameters.get("id");
-async function loadNote() {
+
+      async function loadNote() {
   const {
     data: { user },
     error: userError
@@ -84,6 +94,43 @@ async function loadNote() {
 if (noteId) {
   loadNote();
 }
+
+deleteButton.addEventListener("click", async function () {
+  if (!noteId) {
+    return;
+  }
+
+  const confirmed = confirm("Delete this note?");
+
+  if (!confirmed) {
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    alert("You must sign in.");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("notes")
+    .delete()
+    .eq("id", noteId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Could not delete note:", error);
+    alert(error.message);
+    return;
+  }
+
+  window.location.href = "index.html";
+});
+
       saveButton.addEventListener("click", async function () {
   const title = titleInput.value.trim();
 const content = bodyInput.value.trim();
