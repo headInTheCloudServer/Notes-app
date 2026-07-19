@@ -52,12 +52,49 @@ const supabaseClient = supabase.createClient(
       // Read the note ID from the URL, if one exists.
       const parameters = new URLSearchParams(window.location.search);
       const noteId = parameters.get("id");
+async function loadNote() {
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
 
+  if (userError || !user) {
+    alert("You must sign in to view this note.");
+    window.location.href = "index.html";
+    return;
+  }
+
+  const { data: note, error } = await supabaseClient
+    .from("notes")
+    .select("title, content")
+    .eq("id", noteId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (error) {
+    console.error("Could not load note:", error);
+    alert(error.message);
+    return;
+  }
+
+  titleInput.value = note.title || "";
+  bodyInput.value = note.content || "";
+}
+
+if (noteId) {
+  loadNote();
+}
       saveButton.addEventListener("click", async function () {
   const title = titleInput.value.trim();
-  const content = bodyInput.value.trim();
+const content = bodyInput.value.trim();
 
-  if (title === "" && content === "") {
+console.log({
+  noteId,
+  title,
+  content
+});
+
+if (title === "" && content === "") {
     alert("Write something before saving.");
     return;
   }
@@ -77,16 +114,19 @@ const supabaseClient = supabase.createClient(
 
   if (noteId) {
     const result = await supabaseClient
-      .from("notes")
-      .update({
-        title: title || "Untitled Note",
-        content: content,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", noteId)
-      .eq("user_id", user.id);
+  .from("notes")
+  .update({
+    title: title || "Untitled Note",
+    content: content,
+    updated_at: new Date().toISOString()
+  })
+  .eq("id", noteId)
+  .eq("user_id", user.id)
+  .select();
 
-    error = result.error;
+console.log("Update result:", result);
+
+error = result.error;
   } else {
     const result = await supabaseClient
       .from("notes")
