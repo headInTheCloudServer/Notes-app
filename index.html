@@ -11,26 +11,38 @@
 
   <body class="min-h-screen bg-base-200 p-6">
     <main class="mx-auto flex max-w-2xl flex-col gap-6">
-      <div id="auth">
-  <input
-    type="email"
-    id="email"
-    placeholder="Email"
-  >
+   <div id="auth">
+  <div id="auth-menu" class="flex gap-2">
+    <button class="btn btn-primary" id="showSignInBtn">
+      Sign In
+    </button>
 
-  <input
-    type="password"
-    id="password"
-    placeholder="Password"
-  >
+    <button class="btn btn-primary" id="showSignUpBtn">
+      Sign Up
+    </button>
+  </div>
 
-  <button class="btn btn-primary" id="signUpBtn">
-    Sign Up
-  </button>
+  <div id="auth-form" class="hidden">
+    <input
+      type="email"
+      id="email"
+      placeholder="Email"
+    >
 
-  <button class="btn btn-primary" id="signInBtn">
-    Sign In
-  </button>
+    <input
+      type="password"
+      id="password"
+      placeholder="Password"
+    >
+
+    <button class="btn btn-primary" id="confirmAuthBtn">
+      Continue
+    </button>
+
+    <button class="btn btn-ghost" id="cancelAuthBtn">
+      Cancel
+    </button>
+  </div>
 </div>
       <div class="flex items-center justify-between">
         <h1 class="text-3xl font-bold">My Notes</h1>
@@ -158,40 +170,86 @@ function escapeHtml(text) {
 
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
-const signUpButton = document.getElementById("signUpBtn");
-const signInButton = document.getElementById("signInBtn");
 
-signUpButton.addEventListener("click", async function () {
-  const { data, error } = await supabaseClient.auth.signUp({
-    email: emailInput.value,
-    password: passwordInput.value
-  });
+const authMenu = document.getElementById("auth-menu");
+const authForm = document.getElementById("auth-form");
+console.log(authForm);
 
-  if (error) {
-    console.error("Sign-up error:", error);
-    alert(error.message);
-    return;
-  }
+const showSignUpButton = document.getElementById("showSignUpBtn");
+const showSignInButton = document.getElementById("showSignInBtn");
 
-  console.log("Sign-up successful:", data);
-  alert("Sign-up successful. Check your email if confirmation is enabled.");
-  loadNotes();
+const confirmAuthButton = document.getElementById("confirmAuthBtn");
+const cancelAuthButton = document.getElementById("cancelAuthBtn");
+
+let authMode = null;
+
+showSignInButton.addEventListener("click", function () {
+  authMode = "sign-in";
+
+  authMenu.classList.add("hidden");
+  authForm.classList.remove("hidden");
+
+  confirmAuthButton.textContent = "Sign In";
 });
 
-signInButton.addEventListener("click", async function () {
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: emailInput.value,
-    password: passwordInput.value
-  });
+showSignUpButton.addEventListener("click", function () {
+  authMode = "sign-up";
 
-  if (error) {
-    console.error("Sign-in error:", error);
-    alert(error.message);
-    return;
+  authMenu.classList.add("hidden");
+  authForm.classList.remove("hidden");
+
+  confirmAuthButton.textContent = "Create Account";
+});
+
+cancelAuthButton.addEventListener("click", function () {
+  authMode = null;
+
+  authForm.classList.add("hidden");
+  authMenu.classList.remove("hidden");
+
+  emailInput.value = "";
+  passwordInput.value = "";
+});
+
+confirmAuthButton.addEventListener("click", async function () {
+  if (authMode === "sign-up") {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: emailInput.value,
+      password: passwordInput.value
+    });
+
+    if (error) {
+      console.error("Sign-up error:", error);
+      alert(error.message);
+      return;
+    }
+
+    console.log("Sign-up successful:", data);
+    alert("Sign-up successful. Check your email if confirmation is enabled.");
   }
 
-  console.log("Sign-in successful:", data);
-  alert("Sign-in successful.");
+  if (authMode === "sign-in") {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: emailInput.value,
+      password: passwordInput.value
+    });
+
+    if (error) {
+      console.error("Sign-in error:", error);
+      alert(error.message);
+      return;
+    }
+
+    console.log("Sign-in successful:", data);
+    alert("Sign-in successful.");
+  }
+
+  authForm.classList.add("hidden");
+  authMenu.classList.remove("hidden");
+
+  emailInput.value = "";
+  passwordInput.value = "";
+
   loadNotes();
 });
 
